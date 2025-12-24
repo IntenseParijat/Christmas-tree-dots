@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🎄</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!--
+Original concept by Tom Miller
+MIT License
+Self-hosted version
+-->
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+#fixed-bg {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw;
+  height: 100vh;
+}
+
+canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1;
+}
+
+#c {
+  width: auto;
+  height: 100%;
+}
+
+#c2 {
+  width: 100%;
+  height: auto;
+}
+
+@media (max-aspect-ratio: 1) {
+  #c {
+    width: 100%;
+    height: auto;
+  }
+  #c2 {
+    width: auto;
+    height: 100%;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- REQUIRED HTML -->
+<div id="fixed-bg">
+  <canvas id="c2"></canvas>
+  <canvas id="c"></canvas>
+</div>
+
+<!-- GSAP -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3/dist/EasePack.min.js"></script>
+
+<script>
+const arr = [];
+const c = document.querySelector("#c");
+const ctx = c.getContext("2d");
+const cw = c.width = 4000;
+const ch = c.height = 4000;
+const T = Math.PI * 2;
+
+const m = { x: cw / 2, y: 0 };
+let isTouching = false;
+const xTo = gsap.quickTo(m, "x", { duration: 1.5, ease: "expo" });
+const yTo = gsap.quickTo(m, "y", { duration: 1.5, ease: "expo" });
+
+const arr2 = [];
+const c2 = document.querySelector("#c2");
+const ctx2 = c2.getContext("2d");
+c2.width = c2.height = 4000;
+
+function updatePointer(x, y) {
+  const r = c.getBoundingClientRect();
+  const sx = (x - r.left) * (c.width / r.width);
+  const sy = (y - r.top) * (c.height / r.height);
+  xTo(sx);
+  yTo(sy);
+}
+
+// Desktop mouse
+c.addEventListener("mousemove", e => {
+  updatePointer(e.clientX, e.clientY);
+});
+
+// Mobile touch
+c.addEventListener("touchstart", () => isTouching = true, { passive: true });
+c.addEventListener("touchend", () => isTouching = false);
+c.addEventListener("touchmove", e => {
+  const t = e.touches[0];
+  updatePointer(t.clientX, t.clientY);
+}, { passive: true });
+
+for (let i = 0; i < 999; i++) {
+  arr.push({
+    cx: cw / 2,
+    cy: gsap.utils.mapRange(0, 999, 600, 3700, i),
+    r: i < 900 ? gsap.utils.mapRange(0, 999, 3, 770, i) : 50,
+    dot: 9,
+    prog: 0.25,
+    s: 1
+  });
+
+  gsap.timeline({ repeat: -1 })
+    .to(arr[i], { duration: 99, prog: "+=1", ease: "slow(0.3,0.4)" })
+    .to(arr[i], { duration: 49.5, s: 0.15, yoyo: true, repeat: 1 }, 0)
+    .seek(Math.random() * 99);
+
+  arr2.push({
+    x: cw * Math.random(),
+    y: -9,
+    i,
+    s: 3 + 5 * Math.random(),
+    a: 0.1 + 0.5 * Math.random()
+  });
+
+  gsap.to(arr2[i], { y: ch, repeat: -1, ease: "none" })
+      .seek(Math.random() * 99)
+      .timeScale(arr2[i].s / 700);
+}
+
+ctx.fillStyle = ctx2.fillStyle = "#fff";
+ctx.strokeStyle = "rgba(255,255,255,0.05)";
+ctx.globalCompositeOperation = "lighter";
+
+let autoT = 0;
+gsap.ticker.add(() => {
+    autoT += 0.002;
+    if (!isTouching) {
+        xTo(cw / 2 + Math.cos(autoT) * cw * 0.15);
+        yTo(ch * 0.15 + Math.sin(autoT * 1.5) * ch * 0.1);
+    }
+  ctx.clearRect(0, 0, cw, ch);
+  ctx2.clearRect(0, 0, cw, ch);
+
+  arr.forEach(p => {
+    const a = p.prog * T;
+    const x = Math.cos(a) * p.r + p.cx;
+    const y = Math.sin(a) * p.r * 0.2 + p.cy;
+    ctx.beginPath();
+    ctx.arc(x, y, p.dot * p.s, 0, T);
+    ctx.fill();
+  });
+
+  arr2.forEach(s => {
+    ctx2.globalAlpha = s.a;
+    ctx2.beginPath();
+    ctx2.arc(s.x, s.y, s.s, 0, T);
+    ctx2.fill();
+    s.y += s.s;
+    if (s.y > ch) s.y = -10;
+  });
+});
+
+</script>
+</body>
+</html>
