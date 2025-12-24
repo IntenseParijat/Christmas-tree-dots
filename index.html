@@ -94,6 +94,7 @@ const T = Math.PI * 2;
 ========================= */
 const m = { x: cw / 2, y: ch * 0.15 };
 let isTouching = false;
+let isHovering = false;
 let autoT = 0;
 
 const xTo = gsap.quickTo(m, "x", { duration: 1.5, ease: "expo" });
@@ -106,7 +107,11 @@ function updatePointer(x, y) {
 }
 
 /* Desktop */
+c.addEventListener("mouseenter", () => isHovering = true);
+c.addEventListener("mouseleave", () => isHovering = false);
+
 c.addEventListener("mousemove", e => {
+  isHovering = true;
   updatePointer(e.clientX, e.clientY);
 });
 
@@ -156,7 +161,7 @@ ctx.globalCompositeOperation = "lighter";
 
 gsap.ticker.add(() => {
   autoT += 0.002;
-  if (!isTouching) {
+  if (!isTouching && !isHovering) {
     xTo(cw / 2 + Math.cos(autoT) * cw * 0.15);
     yTo(ch * 0.15 + Math.sin(autoT * 1.5) * ch * 0.1);
   }
