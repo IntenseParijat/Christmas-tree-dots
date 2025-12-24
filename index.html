@@ -1,195 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>🎄</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!--
-Original artwork & concept by Tom Miller
-MIT License
-Clean self-hosted build (no CodePen wrapper)
--->
+  <head>
+    <meta charset="UTF-8">
+    <title>🎄</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://public.codepenassets.com/css/reset-2.0.min.css">
+<link rel="stylesheet" href="./style.css">
 
-<style>
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  background: #000;
-  overflow: hidden;
-}
-
-#fixed-bg {
-  position: fixed;
-  inset: 0;
-}
-
-canvas {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  aspect-ratio: 1;
-}
-
-#c {
-  height: 100%;
-  width: auto;
-}
-
-#c2 {
-  width: 100%;
-  height: auto;
-}
-
-@media (max-aspect-ratio: 1) {
-  #c {
-    width: 100%;
-    height: auto;
-  }
-  #c2 {
-    height: 100%;
-    width: auto;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<div id="fixed-bg">
+  </head>
+    
+  <body>
+  <div id="fixed-bg">
   <canvas id="c2"></canvas>
   <canvas id="c"></canvas>
 </div>
+    <script src='https://unpkg.com/gsap@3/dist/gsap.min.js'></script>
+<script src='https://assets.codepen.io/721952/perlin.js'></script>
+<script src='https://unpkg.com/gsap@3/dist/EasePack.min.js'></script><script  src="./script.js"></script>
 
-<!-- GSAP (single load, no duplicates) -->
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-<script src="https://unpkg.com/gsap@3/dist/EasePack.min.js"></script>
-
-<script>
-/* =========================
-   CANVAS SETUP
-========================= */
-const c = document.getElementById("c");
-const c2 = document.getElementById("c2");
-const ctx = c.getContext("2d");
-const ctx2 = c2.getContext("2d");
-
-const DPR = Math.min(window.devicePixelRatio || 1, 2);
-const SIZE = 4000;
-
-c.width = c.height = SIZE * DPR;
-c2.width = c2.height = SIZE * DPR;
-ctx.scale(DPR, DPR);
-ctx2.scale(DPR, DPR);
-
-const cw = SIZE;
-const ch = SIZE;
-const T = Math.PI * 2;
-
-/* =========================
-   INTERACTION STATE
-========================= */
-const m = { x: cw / 2, y: ch * 0.15 };
-let isTouching = false;
-let isHovering = false;
-let autoT = 0;
-
-const xTo = gsap.quickTo(m, "x", { duration: 1.5, ease: "expo" });
-const yTo = gsap.quickTo(m, "y", { duration: 1.5, ease: "expo" });
-
-function updatePointer(x, y) {
-  const r = c.getBoundingClientRect();
-  xTo((x - r.left) * (cw / r.width));
-  yTo((y - r.top) * (ch / r.height));
-}
-
-/* Desktop */
-c.addEventListener("mouseenter", () => isHovering = true);
-c.addEventListener("mouseleave", () => isHovering = false);
-
-c.addEventListener("mousemove", e => {
-  isHovering = true;
-  updatePointer(e.clientX, e.clientY);
-});
-
-/* Mobile */
-c.addEventListener("touchstart", () => isTouching = true, { passive: true });
-c.addEventListener("touchend", () => isTouching = false);
-c.addEventListener("touchmove", e => {
-  const t = e.touches[0];
-  updatePointer(t.clientX, t.clientY);
-}, { passive: true });
-
-/* =========================
-   PARTICLES
-========================= */
-const tree = [];
-const snow = [];
-
-for (let i = 0; i < 999; i++) {
-  tree.push({
-    cx: cw / 2,
-    cy: gsap.utils.mapRange(0, 999, 600, 3700, i),
-    r: i < 900 ? gsap.utils.mapRange(0, 999, 3, 770, i) : 50,
-    dot: 9,
-    prog: Math.random(),
-    s: 1
-  });
-
-  gsap.timeline({ repeat: -1 })
-    .to(tree[i], { prog: "+=1", duration: 99, ease: "slow(0.3,0.4)" })
-    .to(tree[i], { s: 0.15, duration: 49.5, yoyo: true, repeat: 1 }, 0)
-    .seek(Math.random() * 99);
-
-  snow.push({
-    x: Math.random() * cw,
-    y: Math.random() * ch,
-    s: 2 + Math.random() * 5,
-    a: 0.1 + Math.random() * 0.5
-  });
-}
-
-/* =========================
-   RENDER LOOP
-========================= */
-ctx.fillStyle = ctx2.fillStyle = "#fff";
-ctx.strokeStyle = "rgba(255,255,255,0.05)";
-ctx.globalCompositeOperation = "lighter";
-
-gsap.ticker.add(() => {
-  autoT += 0.002;
-  if (!isTouching && !isHovering) {
-    xTo(cw / 2 + Math.cos(autoT) * cw * 0.15);
-    yTo(ch * 0.15 + Math.sin(autoT * 1.5) * ch * 0.1);
-  }
-
-  ctx.clearRect(0, 0, cw, ch);
-  ctx2.clearRect(0, 0, cw, ch);
-
-  tree.forEach(p => {
-    const a = p.prog * T;
-    const x = Math.cos(a) * p.r + p.cx;
-    const y = Math.sin(a) * p.r * 0.2 + p.cy;
-    ctx.beginPath();
-    ctx.arc(x, y, p.dot * p.s, 0, T);
-    ctx.fill();
-    ctx.lineWidth = p.dot * p.s * 2;
-    ctx.stroke();
-  });
-
-  snow.forEach(s => {
-    ctx2.globalAlpha = s.a;
-    ctx2.beginPath();
-    ctx2.arc(s.x, s.y, s.s, 0, T);
-    ctx2.fill();
-    s.y += s.s;
-    if (s.y > ch) s.y = -10;
-  });
-});
-</script>
-
-</body>
+  </body>
+  
 </html>
